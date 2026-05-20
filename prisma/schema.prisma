@@ -31,6 +31,8 @@ model Certificate {
   issuer         Issuer   @relation(fields: [issuerId], references: [id], onDelete: Cascade)
   branch         String
   password       String
+  fileContent    String?
+  fileName       String?
   installDate    DateTime
   expirationDate DateTime
   createdAt      DateTime @default(now())

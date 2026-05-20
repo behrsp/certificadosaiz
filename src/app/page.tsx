@@ -1,6 +1,6 @@
 import { getCertificates, deleteCertificate } from './actions'
 import Link from 'next/link'
-import { PlusCircle, Trash2, Edit2, ShieldAlert, ShieldCheck, AlertTriangle, Building2, BadgeCheck } from 'lucide-react'
+import { PlusCircle, Trash2, Edit2, ShieldAlert, ShieldCheck, AlertTriangle, Building2, BadgeCheck, Download } from 'lucide-react'
 import { differenceInCalendarDays, format } from 'date-fns'
 
 export const dynamic = 'force-dynamic';
@@ -135,6 +135,17 @@ export default async function Home() {
                 </div>
 
                 <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                  {cert.fileContent && (
+                    <a 
+                      href={`data:application/octet-stream;base64,${cert.fileContent}`}
+                      download={cert.fileName || 'certificado'}
+                      className="btn btn-outline"
+                      style={{ padding: '0.5rem', borderRadius: '6px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                      title="Baixar Certificado"
+                    >
+                      <Download size={16} />
+                    </a>
+                  )}
                   <Link href={`/editar/${cert.id}`} className="btn btn-outline" style={{ padding: '0.5rem', borderRadius: '6px' }} title="Editar">
                     <Edit2 size={16} />
                   </Link>

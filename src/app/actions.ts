@@ -60,6 +60,8 @@ export async function createCertificate(data: {
   issuerId: string
   branch: string
   password: string
+  fileContent?: string
+  fileName?: string
   installDate: Date
   expirationDate: Date
 }) {
@@ -72,6 +74,8 @@ export async function updateCertificate(id: string, data: {
   issuerId: string
   branch: string
   password: string
+  fileContent?: string
+  fileName?: string
   installDate: Date
   expirationDate: Date
 }) {

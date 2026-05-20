@@ -13,6 +13,8 @@ interface Certificate {
   issuerId: string
   branch: string
   password: string
+  fileContent?: string | null
+  fileName?: string | null
   installDate: Date
   expirationDate: Date
 }
@@ -52,11 +54,32 @@ export default function EditarCertificado({ params }: { params: Promise<{ id: st
     const installDateStr = formData.get('installDate') as string;
     const expirationDateStr = formData.get('expirationDate') as string;
 
+    // Process file to Base64 on client side
+    const fileInput = document.getElementById('file') as HTMLInputElement
+    const file = fileInput?.files?.[0]
+    let fileContent = undefined
+    let fileName = undefined
+
+    if (file) {
+      fileName = file.name
+      fileContent = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          const base64String = (reader.result as string).split(',')[1]
+          resolve(base64String)
+        }
+        reader.onerror = () => reject(new Error('Erro ao ler arquivo'))
+        reader.readAsDataURL(file)
+      })
+    }
+
     const data = {
       companyId: formData.get('companyId') as string,
       issuerId: formData.get('issuerId') as string,
       branch: formData.get('branch') as string,
       password: formData.get('password') as string,
+      // If a new file is uploaded, update both content and name. Otherwise, undefined leaves it untouched.
+      ...(file ? { fileContent, fileName } : {}),
       installDate: new Date(installDateStr + 'T00:00:00'),
       expirationDate: new Date(expirationDateStr + 'T00:00:00')
     }
@@ -132,6 +155,27 @@ export default function EditarCertificado({ params }: { params: Promise<{ id: st
               defaultValue={cert.password}
               className="form-input" 
             />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="file">
+              Arquivo do Certificado (Opcional)
+            </label>
+            <input 
+              id="file"
+              name="file" 
+              type="file" 
+              accept=".pfx,.p12,.cer,.crt,.pem,.der"
+              className="form-input" 
+            />
+            {cert.fileName && (
+              <span style={{ fontSize: '0.875rem', color: '#10b981', marginTop: '0.25rem', display: 'block' }}>
+                Arquivo atual: {cert.fileName} (Envie outro para substituir)
+              </span>
+            )}
+            <span style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.25rem', display: 'block' }}>
+              Extensões aceitas: .pfx, .p12, .cer, .crt, .pem, .der (Máx. 2MB)
+            </span>
           </div>
 
           <div className="form-group">
