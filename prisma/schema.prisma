@@ -10,6 +10,8 @@ model Certificate {
   id             String   @id @default(cuid())
   name           String
   branch         String
+  cnpj           String   @default("")
+  type           String   @default("")
   password       String
   installDate    DateTime
   expirationDate DateTime

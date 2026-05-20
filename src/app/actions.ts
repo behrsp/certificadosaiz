@@ -9,14 +9,38 @@ export async function getCertificates() {
   })
 }
 
+export async function getCertificateById(id: string) {
+  return await prisma.certificate.findUnique({
+    where: { id }
+  })
+}
+
 export async function createCertificate(data: {
   name: string
   branch: string
+  cnpj: string
+  type: string
   password: string
   installDate: Date
   expirationDate: Date
 }) {
   await prisma.certificate.create({
+    data
+  })
+  revalidatePath('/')
+}
+
+export async function updateCertificate(id: string, data: {
+  name: string
+  branch: string
+  cnpj: string
+  type: string
+  password: string
+  installDate: Date
+  expirationDate: Date
+}) {
+  await prisma.certificate.update({
+    where: { id },
     data
   })
   revalidatePath('/')

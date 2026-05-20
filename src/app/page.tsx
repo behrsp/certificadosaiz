@@ -1,6 +1,6 @@
 import { getCertificates, deleteCertificate } from './actions'
 import Link from 'next/link'
-import { PlusCircle, Trash2, ShieldAlert, ShieldCheck, AlertTriangle } from 'lucide-react'
+import { PlusCircle, Trash2, Edit2, ShieldAlert, ShieldCheck, AlertTriangle } from 'lucide-react'
 import { differenceInDays, format } from 'date-fns'
 
 export const dynamic = 'force-dynamic';
@@ -8,6 +8,14 @@ export const dynamic = 'force-dynamic';
 export default async function Home() {
   const certs = await getCertificates()
   const today = new Date()
+
+  const statsByCnpj = certs.reduce((acc, cert) => {
+    const cnpj = cert.cnpj || 'Sem CNPJ'
+    acc[cnpj] = (acc[cnpj] || 0) + 1
+    return acc
+  }, {} as Record<string, number>)
+  
+  const maxCount = Math.max(...Object.values(statsByCnpj), 1)
 
   return (
     <div>
@@ -18,6 +26,30 @@ export default async function Home() {
           Novo Certificado
         </Link>
       </div>
+
+      {certs.length > 0 && (
+        <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '2rem' }}>
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem', fontSize: '1.25rem', color: '#f8fafc' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+            Certificados por CNPJ
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {Object.entries(statsByCnpj).sort((a, b) => b[1] - a[1]).map(([cnpj, count]) => (
+              <div key={cnpj} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ width: '160px', fontSize: '0.875rem', color: '#cbd5e1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '500' }} title={cnpj}>
+                  {cnpj}
+                </div>
+                <div style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.05)', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
+                  <div style={{ width: `${(count / maxCount) * 100}%`, backgroundColor: '#8b5cf6', height: '100%', borderRadius: '4px' }} />
+                </div>
+                <div style={{ width: '30px', textAlign: 'right', fontWeight: 'bold', color: '#f8fafc' }}>
+                  {count}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {certs.length === 0 ? (
         <div className="glass-panel empty-state">
@@ -68,6 +100,18 @@ export default async function Home() {
                 </div>
 
                 <div className="cert-details">
+                  {cert.cnpj && (
+                    <div className="detail-row">
+                      <span className="detail-label">CNPJ:</span>
+                      <span>{cert.cnpj}</span>
+                    </div>
+                  )}
+                  {cert.type && (
+                    <div className="detail-row">
+                      <span className="detail-label">Tipo:</span>
+                      <span>{cert.type}</span>
+                    </div>
+                  )}
                   <div className="detail-row">
                     <span className="detail-label">Senha:</span>
                     <span>{cert.password}</span>
@@ -84,14 +128,19 @@ export default async function Home() {
                   </div>
                 </div>
 
-                <form action={async () => {
-                  'use server'
-                  await deleteCertificate(cert.id)
-                }} style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
-                  <button type="submit" className="btn btn-danger" style={{ padding: '0.5rem', borderRadius: '6px' }} title="Excluir">
-                    <Trash2 size={16} />
-                  </button>
-                </form>
+                <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                  <Link href={`/editar/${cert.id}`} className="btn btn-outline" style={{ padding: '0.5rem', borderRadius: '6px' }} title="Editar">
+                    <Edit2 size={16} />
+                  </Link>
+                  <form action={async () => {
+                    'use server'
+                    await deleteCertificate(cert.id)
+                  }}>
+                    <button type="submit" className="btn btn-danger" style={{ padding: '0.5rem', borderRadius: '6px' }} title="Excluir">
+                      <Trash2 size={16} />
+                    </button>
+                  </form>
+                </div>
               </div>
             )
           })}
