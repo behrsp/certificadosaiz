@@ -1,7 +1,7 @@
 import { getCertificates, deleteCertificate } from './actions'
 import Link from 'next/link'
 import { PlusCircle, Trash2, Edit2, ShieldAlert, ShieldCheck, AlertTriangle, Building2, BadgeCheck } from 'lucide-react'
-import { differenceInDays, format } from 'date-fns'
+import { differenceInCalendarDays, format } from 'date-fns'
 
 export const dynamic = 'force-dynamic';
 
@@ -70,7 +70,7 @@ export default async function Home() {
       ) : (
         <div className="dashboard-grid">
           {certs.map(cert => {
-            const daysLeft = differenceInDays(cert.expirationDate, today)
+            const daysLeft = differenceInCalendarDays(cert.expirationDate, today)
             
             let status = 'normal'
             if (daysLeft < 0) status = 'expired'
