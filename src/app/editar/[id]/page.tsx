@@ -2,17 +2,16 @@
 
 import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
-import { getCertificateById, updateCertificate } from '../../actions'
+import { getCertificateById, updateCertificate, getCompanies, getIssuers } from '../../actions'
 import Link from 'next/link'
 import { ArrowLeft, Save } from 'lucide-react'
 
 // Define the type to match the expected structure
 interface Certificate {
   id: string
-  name: string
+  companyId: string
+  issuerId: string
   branch: string
-  cnpj: string
-  type: string
   password: string
   installDate: Date
   expirationDate: Date
@@ -23,6 +22,14 @@ export default function EditarCertificado({ params }: { params: Promise<{ id: st
   const resolvedParams = use(params)
   const [loading, setLoading] = useState(false)
   const [cert, setCert] = useState<Certificate | null>(null)
+  
+  const [companies, setCompanies] = useState<{id: string, name: string, cnpj: string}[]>([])
+  const [issuers, setIssuers] = useState<{id: string, name: string}[]>([])
+
+  useEffect(() => {
+    getCompanies().then(setCompanies)
+    getIssuers().then(setIssuers)
+  }, [])
   
   useEffect(() => {
     async function loadData() {
@@ -46,10 +53,9 @@ export default function EditarCertificado({ params }: { params: Promise<{ id: st
     const expirationDateStr = formData.get('expirationDate') as string;
 
     const data = {
-      name: formData.get('name') as string,
+      companyId: formData.get('companyId') as string,
+      issuerId: formData.get('issuerId') as string,
       branch: formData.get('branch') as string,
-      cnpj: formData.get('cnpj') as string,
-      type: formData.get('type') as string,
       password: formData.get('password') as string,
       installDate: new Date(installDateStr + 'T00:00:00'),
       expirationDate: new Date(expirationDateStr + 'T00:00:00')
@@ -85,15 +91,23 @@ export default function EditarCertificado({ params }: { params: Promise<{ id: st
       <div className="glass-panel form-container">
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label" htmlFor="name">Nome do Certificado</label>
-            <input 
-              id="name"
-              name="name" 
-              type="text" 
-              required 
-              defaultValue={cert.name}
-              className="form-input" 
-            />
+            <label className="form-label" htmlFor="companyId">Empresa</label>
+            <select id="companyId" name="companyId" required className="form-input" defaultValue={cert.companyId}>
+              <option value="" disabled>Selecione uma Empresa</option>
+              {companies.map(c => (
+                <option key={c.id} value={c.id}>{c.name} ({c.cnpj})</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="issuerId">Certificadora</label>
+            <select id="issuerId" name="issuerId" required className="form-input" defaultValue={cert.issuerId}>
+              <option value="" disabled>Selecione uma Certificadora</option>
+              {issuers.map(i => (
+                <option key={i.id} value={i.id}>{i.name}</option>
+              ))}
+            </select>
           </div>
 
           <div className="form-group">
@@ -105,30 +119,6 @@ export default function EditarCertificado({ params }: { params: Promise<{ id: st
               required 
               defaultValue={cert.branch}
               className="form-input" 
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label" htmlFor="cnpj">CNPJ</label>
-            <input 
-              id="cnpj"
-              name="cnpj" 
-              type="text" 
-              defaultValue={cert.cnpj}
-              className="form-input" 
-              placeholder="00.000.000/0000-00"
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label" htmlFor="type">Tipo de Certificado</label>
-            <input 
-              id="type"
-              name="type" 
-              type="text" 
-              defaultValue={cert.type}
-              className="form-input" 
-              placeholder="Ex: A1, A3..."
             />
           </div>
 

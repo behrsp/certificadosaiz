@@ -1,14 +1,21 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createCertificate } from '../actions'
+import { createCertificate, getCompanies, getIssuers } from '../actions'
 import Link from 'next/link'
 import { ArrowLeft, Save } from 'lucide-react'
 
 export default function NovoCertificado() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [companies, setCompanies] = useState<{id: string, name: string, cnpj: string}[]>([])
+  const [issuers, setIssuers] = useState<{id: string, name: string}[]>([])
+
+  useEffect(() => {
+    getCompanies().then(setCompanies)
+    getIssuers().then(setIssuers)
+  }, [])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -20,12 +27,10 @@ export default function NovoCertificado() {
     const expirationDateStr = formData.get('expirationDate') as string;
 
     const data = {
-      name: formData.get('name') as string,
+      companyId: formData.get('companyId') as string,
+      issuerId: formData.get('issuerId') as string,
       branch: formData.get('branch') as string,
-      cnpj: formData.get('cnpj') as string,
-      type: formData.get('type') as string,
       password: formData.get('password') as string,
-      // Adding T00:00:00 to avoid timezone shifting issues when parsing YYYY-MM-DD
       installDate: new Date(installDateStr + 'T00:00:00'),
       expirationDate: new Date(expirationDateStr + 'T00:00:00')
     }
@@ -54,15 +59,23 @@ export default function NovoCertificado() {
       <div className="glass-panel form-container">
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label" htmlFor="name">Nome do Certificado</label>
-            <input 
-              id="name"
-              name="name" 
-              type="text" 
-              required 
-              className="form-input" 
-              placeholder="Ex: Certificado A1 - Empresa"
-            />
+            <label className="form-label" htmlFor="companyId">Empresa</label>
+            <select id="companyId" name="companyId" required className="form-input" defaultValue="">
+              <option value="" disabled>Selecione uma Empresa</option>
+              {companies.map(c => (
+                <option key={c.id} value={c.id}>{c.name} ({c.cnpj})</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="issuerId">Certificadora</label>
+            <select id="issuerId" name="issuerId" required className="form-input" defaultValue="">
+              <option value="" disabled>Selecione uma Certificadora</option>
+              {issuers.map(i => (
+                <option key={i.id} value={i.id}>{i.name}</option>
+              ))}
+            </select>
           </div>
 
           <div className="form-group">
@@ -74,28 +87,6 @@ export default function NovoCertificado() {
               required 
               className="form-input" 
               placeholder="Ex: Matriz / Filial 01"
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label" htmlFor="cnpj">CNPJ</label>
-            <input 
-              id="cnpj"
-              name="cnpj" 
-              type="text" 
-              className="form-input" 
-              placeholder="00.000.000/0000-00"
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label" htmlFor="type">Tipo de Certificado</label>
-            <input 
-              id="type"
-              name="type" 
-              type="text" 
-              className="form-input" 
-              placeholder="Ex: A1, A3..."
             />
           </div>
 
