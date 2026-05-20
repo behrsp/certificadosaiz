@@ -9,7 +9,7 @@ export default async function Home() {
   const certs = await getCertificates()
   const today = new Date()
 
-  const statsByCnpj = certs.reduce((acc: Record<string, number>, cert) => {
+  const statsByCnpj = certs.reduce((acc: Record<string, number>, cert: { company: { name: string; cnpj: string } }) => {
     const key = `${cert.company.name} (${cert.company.cnpj})`
     acc[key] = (acc[key] || 0) + 1
     return acc
