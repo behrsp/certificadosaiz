@@ -1,65 +1,102 @@
-import Image from "next/image";
+import { getCertificates, deleteCertificate } from './actions'
+import Link from 'next/link'
+import { PlusCircle, Trash2, ShieldAlert, ShieldCheck, AlertTriangle } from 'lucide-react'
+import { differenceInDays, format } from 'date-fns'
 
-export default function Home() {
+export const dynamic = 'force-dynamic';
+
+export default async function Home() {
+  const certs = await getCertificates()
+  const today = new Date()
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div>
+      <div className="header">
+        <h1 className="title">Monitor de Certificados</h1>
+        <Link href="/novo" className="btn btn-primary">
+          <PlusCircle size={20} />
+          Novo Certificado
+        </Link>
+      </div>
+
+      {certs.length === 0 ? (
+        <div className="glass-panel empty-state">
+          <ShieldCheck size={48} className="empty-icon" />
+          <h2>Nenhum certificado cadastrado</h2>
+          <p>Adicione seu primeiro certificado para começar o monitoramento.</p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      ) : (
+        <div className="dashboard-grid">
+          {certs.map(cert => {
+            const daysLeft = differenceInDays(cert.expirationDate, today)
+            
+            let status = 'normal'
+            if (daysLeft < 0) status = 'expired'
+            else if (daysLeft <= 15) status = 'critical'
+            else if (daysLeft <= 30) status = 'warning'
+
+            return (
+              <div key={cert.id} className={`glass-panel cert-card ${status === 'expired' ? 'expired' : ''}`}>
+                <div className={`status-indicator indicator-${status === 'expired' ? 'critical' : status}`} />
+                
+                <div className="cert-header">
+                  <div>
+                    <h3 className="cert-name">{cert.name}</h3>
+                    <div className="cert-branch">{cert.branch}</div>
+                  </div>
+                  
+                  {status === 'expired' && (
+                    <span className="status-badge status-critical">
+                      <ShieldAlert size={14} /> Vencido
+                    </span>
+                  )}
+                  {status === 'critical' && (
+                    <span className="status-badge status-critical">
+                      <AlertTriangle size={14} /> Crítico ({daysLeft} dias)
+                    </span>
+                  )}
+                  {status === 'warning' && (
+                    <span className="status-badge status-warning">
+                      <AlertTriangle size={14} /> Atenção ({daysLeft} dias)
+                    </span>
+                  )}
+                  {status === 'normal' && (
+                    <span className="status-badge status-normal">
+                      <ShieldCheck size={14} /> Normal
+                    </span>
+                  )}
+                </div>
+
+                <div className="cert-details">
+                  <div className="detail-row">
+                    <span className="detail-label">Senha:</span>
+                    <span>{cert.password}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Instalação:</span>
+                    <span>{format(cert.installDate, 'dd/MM/yyyy')}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Vencimento:</span>
+                    <span style={status === 'expired' ? { color: '#f87171', fontWeight: 'bold' } : {}}>
+                      {format(cert.expirationDate, 'dd/MM/yyyy')}
+                    </span>
+                  </div>
+                </div>
+
+                <form action={async () => {
+                  'use server'
+                  await deleteCertificate(cert.id)
+                }} style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
+                  <button type="submit" className="btn btn-danger" style={{ padding: '0.5rem', borderRadius: '6px' }} title="Excluir">
+                    <Trash2 size={16} />
+                  </button>
+                </form>
+              </div>
+            )
+          })}
         </div>
-      </main>
+      )}
     </div>
-  );
+  )
 }
